@@ -324,30 +324,15 @@ void NGC_Exporter::export_layer(shared_ptr<Layer> layer, string of_name, boost::
                            to_string(mill->spindown_time) + "\n");
       }
 
-      // Start the new tool.
-      of << endl
-         << (bZchangeG53 ? "G53 " : "") << "G00 Z" << mill->zchange * cfactor << " (Retract to tool change height)" << endl
-         << "T" << (toolpaths_index + 1) << endl
-         << "M5      (Spindle stop.)" << endl
-         << "G04 P" << mill->spindown_time << " (Wait for spindle to stop)" << endl;
-      if (cutter) {
-        of << "(MSG, Change tool bit to cutter diameter ";
-      } else if (isolator) {
-        of << "(MSG, Change tool bit to mill diameter ";
-      } else {
+      if (!cutter && !isolator) {
         throw std::logic_error("Can't cast to Cutter nor Isolator.");
       }
-      const auto& tool_diameter = all_toolpaths[toolpaths_index].first;
-      if (bMetricoutput) {
-        of << (tool_diameter * 25.4) << "mm)" << endl;
-      } else {
-        of << tool_diameter << "in)" << endl;
+      if (toolpaths_index == 0) {
+        // Start the new tool.
+        of << endl
+           << "M3 ( Spindle on clockwise. )" << endl
+           << "G04 P" << mill->spinup_time << " (Wait for spindle to get up to speed)" << endl;
       }
-      of << (nom6?"":"M6      (Tool change.)\n")
-         << "M0      (Temporary machine stop.)" << endl
-         << "M3 ( Spindle on clockwise. )" << endl
-         << "G04 P" << mill->spinup_time << " (Wait for spindle to get up to speed)" << endl;
-
       tiling.header( of );
 
       for( unsigned int i = 0; i < tileInfo.forYNum; i++ ) {
