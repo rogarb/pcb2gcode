@@ -302,7 +302,9 @@ void ExcellonProcessor::export_ngc(const string of_dir, const boost::optional<st
     of << preamble_ext;        //insert external preamble file
     of << preamble;            //insert internal preamble
     of << "G00 S" << left << driller->speed << "     (RPM spindle speed.)\n" << "\n";
-
+    of << "M3      (Spindle on clockwise.)\n"
+       << "G0 Z" << driller->zsafe * cfactor << "\n"
+       << "G04 P" << driller->spinup_time << "\n\n";
     //tiling->header( of );     // See TODO #2
 
     for (const auto& hole : holes) {
@@ -310,16 +312,6 @@ void ExcellonProcessor::export_ngc(const string of_dir, const boost::optional<st
         if (zchange_absolute) {
             of << "G53 ";
         }
-        of << "G00 Z" << driller->zchange * cfactor << " (Retract)\n" << "T"
-           << hole.first << "\n" << "M5      (Spindle stop.)\n"
-           << "G04 P" << driller->spindown_time
-           << "\n(MSG, Change tool bit to drill size "
-           << drill_to_string(bit) << ")\n"
-           << (nom6?"":"M6      (Tool change.)\n")
-           << "M0      (Temporary machine stop.)\n"
-           << "M3      (Spindle on clockwise.)\n"
-           << "G0 Z" << driller->zsafe * cfactor << "\n"
-           << "G04 P" << driller->spinup_time << "\n\n";
 
         if( nog81 )
             of << "G1 F" << driller->feed * cfactor << '\n';
